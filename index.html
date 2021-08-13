@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>sat(seperating axis theorem)</title>
+<style type="text/css">
+*{
+	padding:0;
+	margin:0;
+}
+body{
+	background:#000;
+}
+</style>
+</head>
+<body>
+<canvas id="canvas" width="350" height="500"></canvas>
+<script type="text/javascript">
+var c = document.getElementById("canvas");
+var ctx = c.getContext("2d");
+
+window.addEventListener("resize",function(){
+	c.width = window.innerWidth;
+	c.height = window.innerHeight;
+});
+
+var poly1 = [{x:50,y:0},{x:100,y:50},{x:0,y:70}];
+var poly2 = [{x:0,y:0},{x:200,y:60},{x:200,y:100},{x:50,y:160}];
+
+var v1x = 1;
+var v1y = 1;
+var v2x = 2;
+var v2y = 3;
+var angle1 = 0.01;
+var angle2 = 0.02;
+
+function sat(a,b){/*seperating axis theorem*/
+	var polygons = [a,b];
+	var minA,minB,maxA,maxB,projected;
+	for(var i=0;i<polygons.length;i++){
+		var polygon = polygons[i]
+		for(var i1=0;i1<polygon.length;i1++){
+			var i2 = (i1+1) % polygon.length;
+			var p1 = polygon[i1];
+			var p2 = polygon[i2];
+			var normal = {x:p2.y-p1.y,y:p1.x-p2.x};
+			minA = minB = maxA = maxB = undefined;
+			for(var j=0;j<a.length;j++){
+				projected = normal.x * a[j].x + normal.y * a[j].y;
+				if(minA == undefined || projected < minA){
+					minA = projected;
+				}
+				if(maxA == undefined || projected > maxA){
+					maxA = projected;
+				}
+			}
+			for(var j=0;j<b.length;j++){
+				projected = normal.x * b[j].x + normal.y * b[j].y;
+				if(minB == undefined || projected < minB){
+					minB = projected;
+				}
+				if(maxB == undefined || projected > maxB){
+					maxB = projected;
+				}
+			}
+			
+			if(maxA < minB || minA > maxB){
+				return false;
+			}
+			
+		}
+	}
+	return true;
+}
+
+function drawPoly(poly){
+	ctx.beginPath();
+	ctx.moveTo(poly[0].x,poly[0].y);
+	for(var i=1;i<poly.length;i++){
+		ctx.lineTo(poly[i].x,poly[i].y);
+	}
+	ctx.lineWidth = 3;
+	ctx.closePath();
+	ctx.stroke();
+}
+function getMinX(poly){
+	var minX = poly[0].x;
+	for(var i=1;i<poly.length;i++){
+		if(minX > poly[i].x){
+			minX = poly[i].x;
+		}
+	}
+	return minX;
+}
+function getMaxX(poly){
+	var maxX = poly[0].x;
+	for(var i=1;i<poly.length;i++){
+		if(maxX < poly[i].x){
+			maxX = poly[i].x;
+		}
+	}
+	return maxX;
+}
+function getMinY(poly){
+	var minY = poly[0].y;
+	for(var i=1;i<poly.length;i++){
+		if(minY > poly[i].y){
+			minY = poly[i].y;
+		}
+	}
+	return minY;
+}
+function getMaxY(poly){
+	var maxY = poly[0].y;
+	for(var i=1;i<poly.length;i++){
+		if(maxY < poly[i].y){
+			maxY = poly[i].y;
+		}
+	}
+	return maxY;
+}
+function getPolyCenter(poly){
+	return {
+		x:(getMinX(poly)+getMaxX(poly))/2,
+		y:(getMinY(poly)+getMaxY(poly))/2
+	};
+}
+
+function rotatePoly(poly,theta){
+	var cp = getPolyCenter(poly);
+	for(var i=0;i<poly.length;i++){
+		var dx = -(cp.x - poly[i].x);
+		var dy = -(cp.y - poly[i].y);
+		var distance = Math.sqrt(dx*dx + dy*dy);
+		var angle = Math.atan2(dy,dx);
+		poly[i].x = cp.x + Math.cos(angle+theta)*distance;
+		poly[i].y = cp.y + Math.sin(angle+theta)*distance;
+	}
+	return poly;
+	
+}
+function animate(){
+	ctx.clearRect(0,0,c.width,c.height);
+	ctx.strokeStyle = sat(poly1,poly2)?"red":"green";
+	drawPoly(poly1);
+	drawPoly(poly2);
+	for(var i=0;i<poly1.length;i++){
+		poly1[i].x += v1x;
+		poly1[i].y += v1y;
+	}
+	for(var i=0;i<poly2.length;i++){
+		poly2[i].x += v2x;
+		poly2[i].y += v2y;
+	}
+	if(getMinX(poly1)<0 && v1x<0){
+		v1x *= -1;
+	}
+	if(getMaxX(poly1)>c.width && v1x>0){
+		v1x *= -1;
+	}
+	if(getMinY(poly1)<0 && v1y<0){
+		v1y *= -1;
+	}
+	if(getMaxY(poly1)>c.height && v1y>0){
+		v1y *= -1;
+	}
+	if(getMinX(poly2)<0 && v2x<0){
+		v2x *= -1;
+	}
+	if(getMaxX(poly2)>c.width && v2x>0){
+		v2x *= -1;
+	}
+	if(getMinY(poly2)<0 && v2y<0){
+		v2y *= -1;
+	}
+	if(getMaxY(poly2)>c.height && v2y>0){
+		v2y *= -1;
+	}
+	poly1 = rotatePoly(poly1,angle1);
+	poly2 = rotatePoly(poly2,angle2);
+	requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>
